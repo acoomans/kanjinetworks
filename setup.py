@@ -10,7 +10,7 @@ def requires():
 
 config = {
     'name': 'kanjinetworks',
-    'version': '0.1.5',
+    'version': '0.1.6',
     'description': 'Kanji Networks interface',
     'long_description': readme(),
     'license': 'MIT',
@@ -21,9 +21,9 @@ config = {
     'install_requires': requires(),
     'packages': ['kanjinetworks', 'kanjinetworks.extract', 'kanjinetworks.export'],
     'scripts': ['scripts/kn_to_ja.py'],
-    'package_data': {'kanjinetworks': ['data/etymologicaldictionaryofhanchinesecharacters-160816005400.pdf']},
-    'zip_safe': False,
+    'package_data': {'kanjinetworks': ['data/*']},
     'include_package_data': True,
+    'zip_safe': False,
     'test_suite': 'kanjinetworks',
 }
 
