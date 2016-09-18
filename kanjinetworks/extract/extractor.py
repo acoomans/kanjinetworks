@@ -11,7 +11,7 @@ from pdfminer.pdfpage import PDFPage
 
 # http://www.slideshare.net/KanjiNetworks/etymological-dictionary-ofhanchinesecharacters
 
-pdf_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../data/etymologicaldictionaryofhanchinesecharacters-160816005400.pdf")
+pdf_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../data/etymologicaldictionaryofhanchinesecharacters-160816005400.pdf")
 pdf_range = range(7, 569)
 
 
