@@ -10,7 +10,7 @@ def requires():
 
 config = {
     'name': 'kanjinetworks',
-    'version': '0.1.7',
+    'version': '0.1.8',
     'description': 'Kanji Networks interface',
     'long_description': readme(),
     'license': 'MIT',

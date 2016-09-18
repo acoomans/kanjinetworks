@@ -20,7 +20,7 @@ if __name__ == "__main__":
     args = argparser.parse_args()
 
     text = get_text()
-    statistics(text)
+    # statistics(text)
 
     kanjis = KanjiNetworksParser().parse(text)
     # for kanji in kanjis:
