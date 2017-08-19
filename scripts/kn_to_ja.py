@@ -22,7 +22,7 @@ if __name__ == "__main__":
     text = get_text()
     # statistics(text)
 
-    kanjis = KanjiNetworksParser().parse(text)
+    kanjis = KanjiNetworksParser().parse(text, split_shinjitai=True)
     # for kanji in kanjis:
     #     print unicode(kanji)
     print "imported %s kanjis" % len(kanjis)

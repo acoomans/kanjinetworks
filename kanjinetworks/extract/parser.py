@@ -7,10 +7,10 @@ from kanjinetworks import Kanji
 
 class KanjiNetworksParser():
 
-    def parse(self, text):
+    def parse(self, text, split_shinjitai=True):
 
-        def kanji_from_line(line):
-            match = re.match(r'^\s*(?P<kanji>.?)\s+\((?P<strokes>\d*)\)\s+(?P<pronunciation>.*)', line, flags=re.UNICODE)
+        def kanjis_from_line(line, split_shinjitai=True):
+            match = re.match(r'^\s*(?P<kanji>.?)\s+\((?P<strokes>\d*)\)\s+(?P<pronunciation>\S+)\s*(Shinjitai)?\s*(?P<kanji_shinjitai>.?)\s*(\((?P<strokes_shinjitai>\d*)\))?', line, flags=re.UNICODE)
             if match and match.group("kanji"):
                 # print "match: %s" % match
                 # print "groups:"
@@ -22,21 +22,44 @@ class KanjiNetworksParser():
                 # print "kanji: %s" % match.group("kanji")
                 # print "strokes: %s" % match.group("strokes")
                 # print "pronunciation: %s" % match.group("pronunciation")
+                # if match.group("kanji_shinjitai"):
+                #     print "kanji_shinjitai: %s" % match.group("kanji_shinjitai")
+                # if match.group("strokes_shinjitai"):
+                #     print "strokes_shinjitai: %s" % match.group("strokes_shinjitai")
+
+                results = []
+
                 kanji = Kanji()
                 kanji.kanji = match.group("kanji").strip()
                 kanji.strokes = int(match.group("strokes").strip())
                 kanji.pronunciation = match.group("pronunciation").strip()
                 kanji.definition = u""
-                return kanji
+                results.append(kanji)
+
+                if split_shinjitai:
+                    if match.group("kanji_shinjitai") and match.group("strokes_shinjitai"):
+                        shinjitai = Kanji()
+                        shinjitai.kanji = match.group("kanji_shinjitai").strip()
+                        shinjitai.strokes = int(match.group("strokes_shinjitai").strip())
+                        shinjitai.pronunciation = match.group("pronunciation").strip()
+                        shinjitai.definition = u""
+                        results.append(shinjitai)
+                else:
+                    if match.group("kanji_shinjitai") and match.group("strokes_shinjitai"):
+                        kanji.kanji_shinjitai = match.group("kanji_shinjitai").strip()
+                        kanji.strokes_shinjitai = int(match.group("strokes_shinjitai").strip())
+
+                return results
             else:
                 return None
 
-        def kanji_append_definition(kanji, line):
-            if not kanji.definition:
-                kanji.definition = line
-            else:
-                kanji.definition += " "
-                kanji.definition += line
+        def kanjis_append_definition(kanjis, line):
+            for kanji in kanjis:
+                if not kanji.definition:
+                    kanji.definition = line
+                else:
+                    kanji.definition += " "
+                    kanji.definition += line
 
         kanjis = list()
 
@@ -46,36 +69,37 @@ class KanjiNetworksParser():
             LAST_LINE_EMPTY = 3
 
         state = ParserState.LOOK_FOR_KANJI
-        current_kanji = None
+        current_kanjis = None
 
         for line in text.split('\n'):
             # print "\n===\nline: %s" % line
 
             if state == ParserState.LOOK_FOR_KANJI:
 
-                new_kanji = kanji_from_line(line)
-                if new_kanji:
+                new_kanjis = kanjis_from_line(line, split_shinjitai)
+                if new_kanjis:
                     # print "new kanji found"
 
-                    if current_kanji:
-                        # print current_kanji
-                        kanjis.append(current_kanji)
+                    if current_kanjis:
+                        # print current_kanjis
+                        kanjis.extend(current_kanjis)
 
-                    current_kanji = new_kanji
+                    current_kanjis = new_kanjis
                     state = ParserState.RECORD_DEFINITION
                     continue
 
             if len(line):
-                if current_kanji:
-                    kanji_append_definition(current_kanji, line)
+                if current_kanjis:
+                    kanjis_append_definition(current_kanjis, line)
                     state = ParserState.RECORD_DEFINITION
 
             else:
                 state = ParserState.LOOK_FOR_KANJI
 
-        if current_kanji:
-            # print current_kanji
-            kanjis.append(current_kanji)
+        if current_kanjis:
+            # print current_kanjis
+            kanjis.extend(current_kanjis)
+
         return kanjis
 
 
@@ -106,6 +130,20 @@ class TestParser(unittest.TestCase):
         self.assertEqual(kanji.pronunciation, u'キロリットル')
         self.assertEqual(kanji.definition, u'立 (ON reading: リツ) for the sound of リ(ッ) as an abbreviated transliteration of "liter" (リットル) + 千 one thousand → one *kiloliter*.')
 
+        def test_no_split(self):
+            text = u'''
+    竏　(8)　キロリットル　
+    立 (ON reading: リツ) for the sound of リ(ッ) as an abbreviated transliteration of "liter" (リットル) +
+    千 one thousand → one *kiloliter*.
+    '''
+            kanjis = KanjiNetworksParser().parse(text, split_shinjitai=False)
+            self.assertEqual(len(kanjis), 1)
+            kanji = kanjis[0]
+            self.assertEqual(kanji.kanji, u'竏')
+            self.assertEqual(kanji.strokes, 8)
+            self.assertEqual(kanji.pronunciation, u'キロリットル')
+            self.assertEqual(kanji.definition,
+                             u'立 (ON reading: リツ) for the sound of リ(ッ) as an abbreviated transliteration of "liter" (リットル) + 千 one thousand → one *kiloliter*.')
 
     def test_base2(self):
         text = u'''
@@ -150,19 +188,43 @@ As per 呉# (rowdy) + 虍 tiger → tigers locked in combat (compare 麌 and 牾
         self.assertEqual(kanji.pronunciation, u'グ;おそれ')
         self.assertEqual(kanji.definition, u'As per 呉# (rowdy) + 虍 tiger → tigers locked in combat (compare 麌 and 牾). *Give careful thought to* is a borrowed meaning, as are *be anxious about*, *fear*, *apprehension* and *concern*.')
 
-    def test_double_kanji(self):
+    def test_double_kanji_split(self):
         text = u'''
 兒 (8) ジ;ニ  Shinjitai 児 (7)
 The relevant seal inscription form shows, as depicted in 思, a profusion of fine bones in fontanels
 (open spaces in an infant's skull over which the skull bones eventually fuse) + 儿 person → *infant*; (very young) *child*.
 '''
-        kanjis = KanjiNetworksParser().parse(text)
-        self.assertEqual(len(kanjis), 1)
+        kanjis = KanjiNetworksParser().parse(text, split_shinjitai=True)
+        self.assertEqual(len(kanjis), 2)
         kanji = kanjis[0]
         self.assertEqual(kanji.kanji, u'兒')
         self.assertEqual(kanji.strokes, 8)
-        self.assertEqual(kanji.pronunciation, u'ジ;ニ  Shinjitai 児 (7)')
+        self.assertEqual(kanji.pronunciation, u'ジ;ニ')
         self.assertEqual(kanji.definition, u'The relevant seal inscription form shows, as depicted in 思, a profusion of fine bones in fontanels (open spaces in an infant\'s skull over which the skull bones eventually fuse) + 儿 person → *infant*; (very young) *child*.')
+
+        kanji = kanjis[1]
+        self.assertEqual(kanji.kanji, u'児')
+        self.assertEqual(kanji.strokes, 7)
+        self.assertEqual(kanji.pronunciation, u'ジ;ニ')
+        self.assertEqual(kanji.definition,
+                         u'The relevant seal inscription form shows, as depicted in 思, a profusion of fine bones in fontanels (open spaces in an infant\'s skull over which the skull bones eventually fuse) + 儿 person → *infant*; (very young) *child*.')
+
+        def test_double_kanji_no_split(self):
+            text = u'''
+    兒 (8) ジ;ニ  Shinjitai 児 (7)
+    The relevant seal inscription form shows, as depicted in 思, a profusion of fine bones in fontanels
+    (open spaces in an infant's skull over which the skull bones eventually fuse) + 儿 person → *infant*; (very young) *child*.
+    '''
+            kanjis = KanjiNetworksParser().parse(text, split_shinjitai=False)
+            self.assertEqual(len(kanjis), 1)
+            kanji = kanjis[0]
+            self.assertEqual(kanji.kanji, u'兒')
+            self.assertEqual(kanji.strokes, 8)
+            self.assertEqual(kanji.kanji_shinjitai, u'児')
+            self.assertEqual(kanji.strokes_shinjitai, 7)
+            self.assertEqual(kanji.pronunciation, u'ジ;ニ')
+            self.assertEqual(kanji.definition,
+                             u'The relevant seal inscription form shows, as depicted in 思, a profusion of fine bones in fontanels (open spaces in an infant\'s skull over which the skull bones eventually fuse) + 儿 person → *infant*; (very young) *child*.')
 
     def test_break_between_kanji_and_definition(self):
         text = u'''
