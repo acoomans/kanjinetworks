@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" manifest="kanjinetworks.manifest">
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" href="touch-icon-iphone.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="touch-icon-ipad.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="touch-icon-iphone-retina.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="touch-icon-ipad-retina.png">
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta property="og:title" content="Shortcut to Kanji Networks" />
+  <meta property="og:url" content="https://github.com/acoomans/kanjinetworks" />
+  <meta property="og:image" content="apple-touch-icon.png" />
+  <title>KanjiNetworks</title>
+
+  <script>
+    var isWebView = /(iPhone|iPod|iPad).*AppleWebKit(?!.*Version)/i.test(navigator.userAgent);
+    if (isWebView == true) {
+      window.location.replace("../kanjinetworks/data/etymologicaldictionaryofhanchinesecharacters-160816005400.pdf");
+    };
+  </script>
+
+</head>
+
+<body>
+  <p>Tap the Safari Share Icon below and choose "Add to Home Screen" from the options.</p>
+  <a href="../kanjinetworks/data/etymologicaldictionaryofhanchinesecharacters-160816005400.pdf">show pdf</a>
+</body>
+</html>
